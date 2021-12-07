@@ -85,7 +85,7 @@ void affecterPointsMedoideProche(P_Point student, P_Cluster clusters, int *dista
 	}
 }
 
-//fonction retournant le meilleur group
+//fonction retournant le meilleur groupe de clusters
 Cluster selectBestClusterMedoids(P_Point student, int *distance[], Cluster cluster , int n){
 	int i,j=0;
 	float totalDist=0;
@@ -120,23 +120,29 @@ Cluster selectBestClusterMedoids(P_Point student, int *distance[], Cluster clust
 int main(int argc, char **argv)
 {
 
-	int numClusters;
+  /*                                                          */
+  int K = 4;                                     // Clusters K
+  FILE *csvFile = fopen("harrypotter.txt", "r"); // Input File
+  /*                                                          */
 
-
-  #define MAX_ROW 256
-
-  /* default values for input arguments */	
-	int K = 4;
-	FILE* csvFile = fopen("choixpeauMagiquecopy.csv","r");
-  
   printf("READ FILE\n"); fflush(stdout);
 
   FILE *fp;
-  Student student[50];
+  Student student1[50];
   int i=0;
   char line[100]; 
 
-  if (csvFile = fopen("harrypotter.txt", "r")) {
+
+    // ************	START PAM	************
+
+    int clusterMedoid[K];
+    int numObjs = (sizeof(student1)/sizeof(int)/10);
+    printf("\nNombre de point %d \n", numObjs);
+
+    P_Point student=(P_Point)malloc(numObjs*sizeof(Student));    
+    P_Cluster clusters=(P_Cluster)malloc(K*sizeof(Cluster));
+
+  if (csvFile) {
     int index = 0;
     while (fgets(line, sizeof(line), csvFile) != NULL && i < 50) {
         // Extract name
@@ -167,21 +173,6 @@ int main(int argc, char **argv)
         }
         index++;
     }
-    /*
-    for (int i = 0; i < 50; i++) {
-        printf("%s %d %d %d %d\n", student[i].name, student[i].u1, student[i].u2, student[i].u3, student[i].u4);
-    }
-    */
-
-
-    // ************	START PAM	************
-
-    int clusterMedoid[K];
-    int numObjs = (sizeof(student)/sizeof(int)/10);
-    printf("\nNombre de point %d \n", numObjs);
-
-    P_Point student=(P_Point)malloc(numObjs*sizeof(Student));    
-    P_Cluster clusters=(P_Cluster)malloc(K*sizeof(Cluster));
 
     /* 1. Choisir arbitrairement (aléatoirement) K objets dans D comme représentation initiale (ou graine) des clusters.*/
 
@@ -209,7 +200,7 @@ int main(int argc, char **argv)
 
     for (i = 0; i < K; i++)
     {
-      printf("   clusterMedoid[%d]: %d\n", i, clusters[i].medoid);
+      printf("   cluster[%d]: %d\n", i, clusters[i].medoid);
     }
     printf("\n");
 
@@ -225,16 +216,29 @@ int main(int argc, char **argv)
     initialiseClusters(student, clusters, numObjs, K);
     initialiseDistance(distance, student, numObjs);
 
+    //printf("%d\n", clusters->medoid);
+    //printf("%d\n", clusters->taille);
+
     do
     {
       changeTest = 0;
       P_Cluster tmpClusters = (P_Cluster)malloc(sizeof(Cluster) * K);
       affecterPointsMedoideProche(student, clusters, distance, numObjs, K);
+      printf("\n");
+
+    // 2(b)  Pour tout objet représentatif m (et donc le cluster associé) et pour tout objet o dans D qui ne soit pas un objet représentatif.
+
       for (i = 0; i < K; i++)
       {
         tmpClusters[i] = selectBestClusterMedoids(student, distance, clusters[i], numObjs);
-        
       }
+      printf("\n");
+
+      for (i = 0; i < K; i++)
+      {
+        printf("  modified cluster[%d]: %d\n", i, clusters[i].medoid);
+      }
+      printf("\n");
       for (i = 0; i < K; i++)
         if (tmpClusters[i].medoid != clusters[i].medoid)
         {
@@ -244,6 +248,10 @@ int main(int argc, char **argv)
       if (changeTest)
       {
         clusters = tmpClusters;
+        printf("\n cluster[0] Serpentard-> %d\n", clusters[0].taille);
+        printf("\n cluster[1] Serdaigle-> %d\n", clusters[1].taille);
+        printf("\n cluster[2] Gryffondor-> %d\n", clusters[2].taille);
+        printf("\n cluster[3] Poufsouffle-> %d\n", clusters[3].taille);
       }
 
     } while (changeTest == 1);
@@ -255,19 +263,21 @@ int main(int argc, char **argv)
       {
         if (student[j].cluster->medoid == medoid)
         {
-          printf("%s",student[j].name);
         }
       }
+      printf("\n");
+      for (i = 0; i < numObjs; i++)
+      {
+        printf("  [%s]: %d\n", student[i].name, student[i].cluster->medoid);
+      }
+      printf("\n");
     }
 
-      // Recherche du cluster le plus similaire (Distance la plus petite).
-      for (int u=0; u<K; u++) {
+    // Recherche du cluster le plus similaire (Distance la plus petite).
 
-      }
 
-	    // ************	END PAM		************	
-  
+    // ************	END PAM		************
+
     return 0;
   }
 }
-
