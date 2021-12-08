@@ -147,7 +147,7 @@ int main(int argc, char **argv)
 
   /*                                                          */
   int K = 4;                                     // Clusters K
-  FILE *csvFile = fopen("harrypotter.txt", "r"); // Input File
+  FILE *csvFile = fopen("harrypotter.csv", "r"); // Input File
   /*                                                          */
 
   printf("READING FILE\n");
