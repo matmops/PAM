@@ -6,7 +6,6 @@
 #include <string.h>
 #include <sys/time.h>
 #include <math.h>
-#include "PAM_rework.h"
 
 // Structure d'un cluster
 typedef struct Cluster
@@ -74,7 +73,7 @@ void initialiseDistance(int *distance[], P_Point student, int numObjs)
 }
 
 // fonction affectation des objets au Medoid le plus proche
-void affecterPointsMedoideProche(P_Point student, P_Cluster clusters, int *distance[], int numObjs, int K)
+void affectClosestKmedoid(P_Point student, P_Cluster clusters, int *distance[], int numObjs, int K)
 {
   int i, j;
   for (i = 0; i < K; i++)
@@ -99,38 +98,47 @@ void affecterPointsMedoideProche(P_Point student, P_Cluster clusters, int *dista
 }
 
 // fonction retournant le meilleur groupe de clusters
-Cluster selectBestClusterMedoids(P_Point student, int *distance[], Cluster cluster, int numObjs)
+Cluster getBestClusterMed(P_Point student, int *distance[], Cluster cluster, int numObjs)
 {
   int i, j = 0;
-  float totalDist = 0;
-  float tmpTotalDist = 0;
+  int E = 0;
+  int S = 0;
   int *medoidPoints = (P_Point)malloc(sizeof(Student) * cluster.taille);
   int medoid = cluster.medoid;
+  int best_cost;
   for (i = 0; i < numObjs; i++)
   {
     if (student[i].cluster->medoid == cluster.medoid)
     {
       medoidPoints[j] = i;
+      // printf("%d\n",medoidPoints[j]);
       j++;
     }
   }
   for (i = 0; i < numObjs; i++)
-    totalDist += distance[max(i, medoid)][min(i, medoid)];
+    E += distance[max(i, medoid)][min(i, medoid)];
 
   for (i = 0; i < cluster.taille; i++)
   {
-    tmpTotalDist = 0;
+    S = 0;
     int tmpMedoid = medoidPoints[i];
 
     for (j = 0; j < numObjs; j++)
-      tmpTotalDist += distance[max(j, tmpMedoid)][min(j, tmpMedoid)];
+      S += distance[max(j, tmpMedoid)][min(j, tmpMedoid)];
 
-    if (tmpTotalDist < totalDist)
+    if (S < E)
     {
       cluster.medoid = tmpMedoid;
-      totalDist = tmpTotalDist;
+      E = S;
+    }
+    if (best_cost > E)
+    {
+      best_cost = min(S, E);
+      E = best_cost;
+      printf(" Cout Total: %d\n", best_cost);
     }
   }
+
   free(medoidPoints);
   return cluster;
 }
@@ -143,7 +151,7 @@ int main(int argc, char **argv)
   FILE *csvFile = fopen("harrypotter.txt", "r"); // Input File
   /*                                                          */
 
-  printf("READ FILE\n");
+  printf("READING FILE\n");
   fflush(stdout);
 
   FILE *fp;
@@ -153,9 +161,8 @@ int main(int argc, char **argv)
 
   // ************	START PAM	************
 
-  int clusterMedoid[K];
   int numObjs = (sizeof(student1) / sizeof(int) / 10);
-  printf("\nNombre de point %d \n", numObjs);
+  printf("\nNombre de points %d \n", numObjs);
 
   P_Point student = (P_Point)malloc(numObjs * sizeof(Student));
   P_Cluster clusters = (P_Cluster)malloc(K * sizeof(Cluster));
@@ -234,7 +241,6 @@ int main(int argc, char **argv)
       printf("   cluster[%d]: %d\n", i, clusters[i].medoid);
     }
     printf("\n");
-
     /*  2(a) Affecter chaque objet non représentatif dans le cluster associé à l’objet représentatif qui est
              le plus similaire (le plus proche au sens de la distance ou la similarité retenue).                */
 
@@ -251,22 +257,15 @@ int main(int argc, char **argv)
     {
       changeTest = 0;
       P_Cluster tmpClusters = (P_Cluster)malloc(sizeof(Cluster) * K);
-      affecterPointsMedoideProche(student, clusters, distance, numObjs, K);
-      printf("\n");
 
-    
-
-    /*  2(b)   Pour tout objet représentatif m (et donc le cluster associé) et pour tout objet o dans D
-               qui ne soit pas un objet représentatif.                                   */
-
-    
-    /*  2(b)i. Soit E le coût actuel du partitionnement, calculer le coût S de la partition 
-               dans laquelle o est un objet représentatif à la place de m                */
+      affectClosestKmedoid(student, clusters, distance, numObjs, K);
+      printf("\nClustering...\n\n");
 
       for (i = 0; i < K; i++)
       {
-        tmpClusters[i] = selectBestClusterMedoids(student, distance, clusters[i], numObjs);
+        tmpClusters[i] = getBestClusterMed(student, distance, clusters[i], numObjs);
       }
+      printf("\n");
 
       for (i = 0; i < K; i++)
         if (tmpClusters[i].medoid != clusters[i].medoid)
@@ -276,38 +275,22 @@ int main(int argc, char **argv)
         }
       if (changeTest)
       {
-        clusters = tmpClusters;
+        clusters[i] = tmpClusters[i];
         for (i = 0; i < K; i++)
         {
+
           printf("\n cluster[%d] -> %d membres\n", i, clusters[i].taille);
         }
       }
 
     } while (changeTest == 1);
-
+    printf("K-Medoids :\n\n");
     for (i = 0; i < K; i++)
     {
+
       printf("  nouveau cluster[%d]: %d\n", i, clusters[i].medoid);
     }
     printf("\n");
-
-    for (i = 0; i < K; i++)
-    {
-      int medoid = clusters[i].medoid;
-      for (j = 0; j < numObjs; j++)
-      {
-        if (student[j].cluster->medoid == medoid)
-        {
-          printf("%s\n",student[j].name);
-        }
-      }
-      printf("\n");
-      for (i = 0; i < numObjs; i++)
-      {
-        //printf("  [%s]: %d\n", student[i].name, student[i].cluster->medoid);
-      }
-      printf("\n");
-    }
 
     // ************	END PAM		************
 
