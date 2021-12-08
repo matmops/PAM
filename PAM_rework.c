@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <time.h>
 #include <assert.h>
 #include <string.h>
 #include <sys/time.h>
@@ -126,16 +125,16 @@ Cluster getBestClusterMed(P_Point student, int *distance[], Cluster cluster, int
     for (j = 0; j < numObjs; j++)
       S += distance[max(j, tmpMedoid)][min(j, tmpMedoid)];
 
-    if (S < E)
-    {
-      cluster.medoid = tmpMedoid;
-      E = S;
-    }
     if (best_cost > E)
     {
       best_cost = min(S, E);
       E = best_cost;
-      printf(" Cout Total: %d\n", best_cost);
+      printf("  Cout Total: %d\n", E);
+    }
+    if (S < E)
+    {
+      cluster.medoid = tmpMedoid;
+      E = S;
     }
   }
 
